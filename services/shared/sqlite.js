@@ -1,17 +1,14 @@
 import sqlite3 from 'sqlite3';
-import { dirname } from 'path';
-import { fileURLToPath } from 'url';
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
+import { resolve } from 'path';
 
 /**
- * Opens or creates a SQLite database file located relative to the shared helper.
+ * Opens or creates a SQLite database file located relative to the project root.
  *
  * @param {string} relativePath - The relative path to the SQLite database file.
  * @returns {Promise<sqlite3.Database>} The opened database instance.
  */
 export function openDatabase(relativePath) {
-  const fullPath = `${__dirname}/../${relativePath}`;
+  const fullPath = resolve(process.cwd(), relativePath);
   return new Promise((resolve, reject) => {
     const db = new sqlite3.Database(fullPath, (err) => {
       if (err) return reject(err);

@@ -1,8 +1,12 @@
 import { ServiceBroker } from 'moleculer';
 import { openDatabase, run, closeDatabase } from '../shared/sqlite.js';
 import { consume, closeConnection } from '../shared/rabbitmq.js';
+import { createHealthCheckAction } from '../shared/healthCheck.js';
+import logger from '../shared/logger.js';
 
-const broker = new ServiceBroker();
+const broker = new ServiceBroker({
+  transporter: 'TCP',
+});
 let db;
 
 /**
@@ -36,12 +40,14 @@ async function processUserCreated(payload) {
   const subject = 'Welcome to our platform!';
   const content = `Hi ${username},\n\nThank you for joining our platform.`;
   await run(db, 'INSERT INTO sent_emails (recipient, subject, content) VALUES (?, ?, ?)', [recipient, subject, content]);
-  console.log(`Email queued for ${recipient}`);
+  logger.info('Email queued', { recipient });
 }
 
 broker.createService({
   name: 'email',
   actions: {
+    ...createHealthCheckAction({ serviceName: 'email' }),
+
     /**
      * Sends an email by storing it in SQLite and logging the action.
      *
@@ -51,8 +57,8 @@ broker.createService({
     async sendEmail(ctx) {
       const { recipient, subject, content } = ctx.params;
       await run(db, 'INSERT INTO sent_emails (recipient, subject, content) VALUES (?, ?, ?)', [recipient, subject, content]);
-      console.log(`Sending email to ${recipient} with subject ${subject}`);
-      console.log(`Content: ${content}`);
+      logger.info('Sending email', { recipient, subject });
+      logger.debug('Email content', { content });
       return `Email sent to ${recipient}`;
     },
   },
@@ -63,7 +69,7 @@ broker.createService({
    * @returns {Promise<void>}
    */
   async started() {
-    db = await openDatabase('email/email.db');
+    db = await openDatabase(process.env.EMAIL_DB_PATH || 'services/email/email.db');
     await ensureSchema();
     await consume('user.created', processUserCreated);
   },

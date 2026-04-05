@@ -21,9 +21,23 @@ npm run rabbitmq
 In another terminal, start the app:
 
 ```bash
-npm run start
+npm start
+```
+
+Or run the full stack with Docker Compose:
+
+```bash
+npm run docker:up
+```
+
+Stop the stack:
+
+```bash
+npm run docker:down
 ```
 
 > Nota: este demo usa RabbitMQ para mensajería entre servicios y cada microservicio guarda datos en su propia base SQLite local.
 >
 > Si RabbitMQ no está disponible, los servicios igualmente arrancan y `user` persiste usuarios en SQLite, pero los eventos `user.created` no llegarán al servicio `email`.
+>
+> Copia `.env.example` a `.env` y ajusta los valores si necesitás configurar rutas o la conexión RabbitMQ.

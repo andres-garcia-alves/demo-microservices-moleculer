@@ -1,8 +1,12 @@
 import { ServiceBroker } from 'moleculer';
 import { openDatabase, run, all, closeDatabase } from '../shared/sqlite.js';
 import { publish, closeConnection } from '../shared/rabbitmq.js';
+import { createHealthCheckAction } from '../shared/healthCheck.js';
+import logger from '../shared/logger.js';
 
-const broker = new ServiceBroker();
+const broker = new ServiceBroker({
+  transporter: 'TCP',
+});
 let db;
 
 /**
@@ -24,6 +28,8 @@ async function ensureSchema() {
 broker.createService({
   name: 'user',
   actions: {
+    ...createHealthCheckAction({ serviceName: 'user' }),
+
     /**
      * Creates a new user and publishes a RabbitMQ event.
      *
@@ -32,9 +38,11 @@ broker.createService({
      */
     async createUser(ctx) {
       const { username, email } = ctx.params;
+      logger.info('Creating user', { username, email });
       const result = await run(db, 'INSERT INTO users (username, email) VALUES (?, ?)', [username, email]);
       const newUser = { id: result.id, username, email };
       await publish('user.created', newUser);
+      logger.info('User created', { userId: newUser.id });
       return newUser;
     },
 
@@ -54,7 +62,7 @@ broker.createService({
    * @returns {Promise<void>}
    */
   async started() {
-    db = await openDatabase('user/user.db');
+    db = await openDatabase(process.env.USER_DB_PATH || 'services/user/user.db');
     await ensureSchema();
   },
 

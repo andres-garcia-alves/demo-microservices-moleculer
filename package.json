@@ -5,15 +5,33 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
+    "start": "node index",
     "rabbitmq": "docker run --rm -p 5672:5672 -p 15672:15672 rabbitmq:3-management",
-    "start": "node index"
+    "docker:up": "docker-compose up --build",
+    "docker:down": "docker-compose down",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "amqplib": "^0.10.3",
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.6.1",
+    "jsonwebtoken": "^8.5.1",
     "moleculer": "^0.15.0",
-    "sqlite3": "^5.1.6"
+    "moleculer-web": "^0.11.0",
+    "sqlite3": "^5.1.6",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
+    "winston": "^3.19.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.24.0",
+    "@babel/preset-env": "^7.24.0",
+    "babel-jest": "^29.7.0",
+    "jest": "^29.7.0"
   }
 }
