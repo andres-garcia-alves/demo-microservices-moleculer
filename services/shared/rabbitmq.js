@@ -3,14 +3,43 @@ import amqp from 'amqplib';
 const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://localhost';
 let connection;
 let channel;
+let connected = false;
 
+/**
+ * Returns a RabbitMQ channel, creating the connection if needed.
+ *
+ * @returns {Promise<amqp.Channel>} The active RabbitMQ channel.
+ * @throws Will throw if RabbitMQ is not reachable.
+ */
 export async function getChannel() {
   if (channel) return channel;
-  connection = await amqp.connect(RABBITMQ_URL);
-  channel = await connection.createChannel();
-  return channel;
+  try {
+    connection = await amqp.connect(RABBITMQ_URL);
+    channel = await connection.createChannel();
+    connected = true;
+    return channel;
+  } catch (error) {
+    connected = false;
+    throw error;
+  }
 }
 
+/**
+ * Indicates whether a RabbitMQ connection has been established.
+ *
+ * @returns {boolean} True when RabbitMQ is connected.
+ */
+export function isConnected() {
+  return connected;
+}
+
+/**
+ * Publishes a JSON message to the specified RabbitMQ queue.
+ *
+ * @param {string} queue - The queue name.
+ * @param {unknown} message - The message payload.
+ * @returns {Promise<void>} Resolves when the message is sent or logs a warning on failure.
+ */
 export async function publish(queue, message) {
   try {
     const ch = await getChannel();
@@ -21,6 +50,13 @@ export async function publish(queue, message) {
   }
 }
 
+/**
+ * Consumes messages from a RabbitMQ queue and dispatches them to a handler.
+ *
+ * @param {string} queue - The queue name.
+ * @param {(payload: unknown) => Promise<void>} onMessage - Handler for each message payload.
+ * @returns {Promise<void>} Resolves when consumer setup is complete.
+ */
 export async function consume(queue, onMessage) {
   try {
     const ch = await getChannel();
@@ -41,6 +77,11 @@ export async function consume(queue, onMessage) {
   }
 }
 
+/**
+ * Closes the RabbitMQ channel and connection if they exist.
+ *
+ * @returns {Promise<void>} Resolves once the connection is cleaned up.
+ */
 export async function closeConnection() {
   try {
     if (channel) {
@@ -54,5 +95,6 @@ export async function closeConnection() {
   } finally {
     channel = undefined;
     connection = undefined;
+    connected = false;
   }
 }

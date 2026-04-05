@@ -12,10 +12,16 @@ Install dependencies first:
 npm install
 ```
 
-Run the services:
+Run RabbitMQ for development (requires Docker):
 
 ```bash
-npm start
+npm run rabbitmq
+```
+
+In another terminal, start the app:
+
+```bash
+npm run start
 ```
 
 > Nota: este demo usa RabbitMQ para mensajería entre servicios y cada microservicio guarda datos en su propia base SQLite local.

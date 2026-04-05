@@ -13,7 +13,7 @@
 
 ## Build and Test
 - Install: `npm install`
-- Run: `npm run dev` (starts all services)
+- Run: `npm run start` (starts all services)
 - No test suite configured yet
 
 ## Conventions

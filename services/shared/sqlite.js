@@ -4,6 +4,12 @@ import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+/**
+ * Opens or creates a SQLite database file located relative to the shared helper.
+ *
+ * @param {string} relativePath - The relative path to the SQLite database file.
+ * @returns {Promise<sqlite3.Database>} The opened database instance.
+ */
 export function openDatabase(relativePath) {
   const fullPath = `${__dirname}/../${relativePath}`;
   return new Promise((resolve, reject) => {
@@ -14,6 +20,14 @@ export function openDatabase(relativePath) {
   });
 }
 
+/**
+ * Executes a SQL statement that does not return rows.
+ *
+ * @param {sqlite3.Database} db - The database instance.
+ * @param {string} sql - The SQL statement to execute.
+ * @param {Array<unknown>} [params=[]] - Positional parameters for the SQL statement.
+ * @returns {Promise<{id:number,changes:number}>} The SQL execution result.
+ */
 export function run(db, sql, params = []) {
   return new Promise((resolve, reject) => {
     db.run(sql, params, function (err) {
@@ -23,6 +37,14 @@ export function run(db, sql, params = []) {
   });
 }
 
+/**
+ * Executes a SQL query and returns a single row.
+ *
+ * @param {sqlite3.Database} db - The database instance.
+ * @param {string} sql - The SQL query to execute.
+ * @param {Array<unknown>} [params=[]] - Positional parameters for the SQL query.
+ * @returns {Promise<object|null>} The retrieved row or null if none is found.
+ */
 export function get(db, sql, params = []) {
   return new Promise((resolve, reject) => {
     db.get(sql, params, (err, row) => {
@@ -32,6 +54,14 @@ export function get(db, sql, params = []) {
   });
 }
 
+/**
+ * Executes a SQL query and returns all matching rows.
+ *
+ * @param {sqlite3.Database} db - The database instance.
+ * @param {string} sql - The SQL query to execute.
+ * @param {Array<unknown>} [params=[]] - Positional parameters for the SQL query.
+ * @returns {Promise<Array<object>>} The retrieved rows.
+ */
 export function all(db, sql, params = []) {
   return new Promise((resolve, reject) => {
     db.all(sql, params, (err, rows) => {
@@ -41,6 +71,12 @@ export function all(db, sql, params = []) {
   });
 }
 
+/**
+ * Closes the database connection.
+ *
+ * @param {sqlite3.Database} db - The database instance.
+ * @returns {Promise<void>} Resolves when the database is closed.
+ */
 export function closeDatabase(db) {
   return new Promise((resolve, reject) => {
     db.close((err) => {
