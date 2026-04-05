@@ -4,10 +4,9 @@ import { openDatabase, run, get, closeDatabase } from '../shared/sqlite.js';
 import { createHealthCheckAction } from '../shared/healthCheck.js';
 import { generateToken, verifyToken } from '../shared/jwt.js';
 import logger from '../shared/logger.js';
+import { getTransporterConfig } from '../shared/transporter.js';
 
-const broker = new ServiceBroker({
-  transporter: 'TCP',
-});
+const broker = new ServiceBroker(getTransporterConfig());
 let db;
 
 /**

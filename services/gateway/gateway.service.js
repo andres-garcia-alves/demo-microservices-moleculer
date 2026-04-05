@@ -1,9 +1,8 @@
 import { ServiceBroker } from 'moleculer';
 import ApiService from 'moleculer-web';
+import { getTransporterConfig } from '../shared/transporter.js';
 
-const broker = new ServiceBroker({
-  transporter: 'TCP',
-});
+const broker = new ServiceBroker(getTransporterConfig());
 
 broker.createService({
   ...ApiService,
@@ -27,6 +26,16 @@ broker.createService({
           body: {
             username: { type: 'string', required: true },
             password: { type: 'string', required: true },
+          },
+        },
+      },
+      'POST /auth/verify': {
+        action: 'auth.verifyToken',
+        swagger: {
+          summary: 'Verify JWT token',
+          tags: ['Authentication'],
+          body: {
+            token: { type: 'string', required: true },
           },
         },
       },

@@ -1,12 +1,10 @@
 import { ServiceBroker } from 'moleculer';
 import { openDatabase, run, closeDatabase } from '../shared/sqlite.js';
-import { consume, closeConnection } from '../shared/rabbitmq.js';
 import { createHealthCheckAction } from '../shared/healthCheck.js';
 import logger from '../shared/logger.js';
+import { getTransporterConfig } from '../shared/transporter.js';
 
-const broker = new ServiceBroker({
-  transporter: 'TCP',
-});
+const broker = new ServiceBroker(getTransporterConfig());
 let db;
 
 /**
@@ -64,18 +62,29 @@ broker.createService({
   },
 
   /**
-   * Starts the email service and subscribes to RabbitMQ user events.
+   * Moleculer event listeners.
+   */
+  events: {
+    'user.created': {
+      handler(ctx) {
+        return processUserCreated(ctx.params);
+      },
+    },
+  },
+
+  /**
+   * Starts the email service and opens the database.
    *
    * @returns {Promise<void>}
    */
   async started() {
     db = await openDatabase(process.env.EMAIL_DB_PATH || 'services/email/email.db');
     await ensureSchema();
-    await consume('user.created', processUserCreated);
+    logger.info('Email service started and listening to user.created events');
   },
 
   /**
-   * Closes the email SQLite database and RabbitMQ connection when stopped.
+   * Closes the email SQLite database when stopped.
    *
    * @returns {Promise<void>}
    */
@@ -83,7 +92,6 @@ broker.createService({
     if (db) {
       await closeDatabase(db);
     }
-    await closeConnection();
   },
 });
 

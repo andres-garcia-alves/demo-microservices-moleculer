@@ -1,12 +1,10 @@
 import { ServiceBroker } from 'moleculer';
 import { openDatabase, run, all, closeDatabase } from '../shared/sqlite.js';
-import { publish, closeConnection } from '../shared/rabbitmq.js';
 import { createHealthCheckAction } from '../shared/healthCheck.js';
 import logger from '../shared/logger.js';
+import { getTransporterConfig } from '../shared/transporter.js';
 
-const broker = new ServiceBroker({
-  transporter: 'TCP',
-});
+const broker = new ServiceBroker(getTransporterConfig());
 let db;
 
 /**
@@ -31,7 +29,7 @@ broker.createService({
     ...createHealthCheckAction({ serviceName: 'user' }),
 
     /**
-     * Creates a new user and publishes a RabbitMQ event.
+     * Creates a new user and emits a Moleculer event.
      *
      * @param {import('moleculer').Context} ctx - The Moleculer action context.
      * @returns {Promise<object>} The created user.
@@ -41,7 +39,7 @@ broker.createService({
       logger.info('Creating user', { username, email });
       const result = await run(db, 'INSERT INTO users (username, email) VALUES (?, ?)', [username, email]);
       const newUser = { id: result.id, username, email };
-      await publish('user.created', newUser);
+      this.broker.emit('user.created', newUser);
       logger.info('User created', { userId: newUser.id });
       return newUser;
     },
@@ -67,7 +65,7 @@ broker.createService({
   },
 
   /**
-   * Cleans up the database and RabbitMQ connection when the service stops.
+   * Cleans up the database when the service stops.
    *
    * @returns {Promise<void>}
    */
@@ -75,7 +73,6 @@ broker.createService({
     if (db) {
       await closeDatabase(db);
     }
-    await closeConnection();
   },
 });
 

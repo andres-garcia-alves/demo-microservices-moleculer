@@ -1,7 +1,5 @@
 import UserService from '../user.service.js';
 
-jest.setTimeout(20000);
-
 describe('User Service', () => {
   beforeAll(async () => {
     await UserService.start();
