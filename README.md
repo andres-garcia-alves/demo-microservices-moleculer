@@ -1,65 +1,92 @@
-# Microservices Demo with Moleculer
+# Microservices Demo with Node.js + Moleculer
 
-Complete demonstration of microservices architecture using the [Moleculer framework](https://moleculer.services) with production-ready features.
+Complete demonstration of microservices architecture using [Moleculer framework](https://moleculer.services) with production-ready features.
 
-**Included Services:**
-- 👤 **User Service** - User creation and management (SQLite)
-- 🔐 **Auth Service** - Authentication with JWT and bcrypt
-- 📧 **Email Service** - Email sending (listens to user events)
-- 🔌 **API Gateway** - REST API with Swagger/OpenAPI
+Included services:
+- API Gateway - REST API with Swagger/OpenAPI
+- User Service - User creation and management (SQLite)
+- Auth Service - Authentication with JWT and BCrypt
+- Email Service - Email sending (listens to user events)
 
----
+&nbsp;
 
-## 🚀 Implemented Features
+## Implemented Features
 
-### ✅ Dynamic Transporters (TCP vs RabbitMQ)
-- **TCP** (default) - Development without external dependencies
-- **AMQP** (RabbitMQ) - Scalable production
-- Switch between transporters by updating `TRANSPORTER_TYPE` variable only
+### Dynamic Transporters (Moleculer TCP vs RabbitMQ)
+- TCP (default) - Development without external dependencies
+- AMQP (RabbitMQ) - Scalable production
+- Switch between transporters by updating `TRANSPORTER_TYPE` environment variable
 
-### ✅ Authentication and Security
+### Authentication & Security
 - JWT tokens with configurable expiration
 - Password hashing with bcryptjs
 - Login and token verification endpoints
+- **Security Headers** - Helmet.js protection against common web vulnerabilities
+  - Content Security Policy (CSP)
+  - HTTP Strict Transport Security (HSTS)
+  - X-Content-Type-Options, X-XSS-Protection
+  - Referrer Policy configuration
+- **Rate Limiting** - express-rate-limit protection against abuse
+  - 100 requests per 15 minutes for general endpoints
+  - 5 requests per 15 minutes for authentication endpoints
+  - Custom error messages and retry headers
+- **Circuit Breaker Pattern** - Resilience against service failures
+  - Automatic failure detection and recovery
+  - Configurable failure thresholds (default: 3 failures)
+  - Recovery timeout (default: 30 seconds)
+  - Service-specific circuit breakers
+  - Status monitoring endpoint
+- **API Versioning** - Smooth API evolution with backward compatibility
+  - URL-based versioning (`/api/v1/`, `/api/v2/`)
+  - Version headers in responses (`X-API-Version`)
+  - Deprecation warnings for legacy routes
+  - Swagger documentation with version information
 
-### ✅ Health Checks and Metrics
+### Health Checks and Metrics
 - `/health` endpoints on each service
 - Uptime and memory usage monitoring
 - Service status verification
 
-### ✅ API Gateway and Documentation
+### Database Management
+- **Database Migrations** - Version-controlled schema management
+  - Migration framework with up/down support
+  - Automated migration tracking in `_migrations` table
+  - Easy rollback capabilities
+  - npm scripts: `migrate:up`, `migrate:down`, `migrate:status`
+  - Support for complex schema operations
+  - Windows and Linux compatibility
+
+### API Gateway and Documentation
 - Centralized REST API on port 3000
 - Automatic Swagger/OpenAPI documentation
 - REST routes structured by service
 
-### ✅ Structured Logging
+### Structured Logging
 - Winston logger with JSON formatting
 - Logs to files and console
 - Configurable logging level
 - Complete event traceability
 
-### ✅ Testing with Vitest
+### Testing with Vitest
 - Modern testing framework (Jest replacement)
-- 10-100x faster than Jest
-- Native ESM support
 - Visual UI for tests (`npm run test:ui`)
 
-### ✅ External Configuration
+### External Configuration
 - Environment variables via `.env`
 - Configurable: JWT_SECRET, TRANSPORTER_TYPE, LOG_LEVEL, etc.
-- `.env.example` as reference
+- See `.env.example` as reference
 
----
+&nbsp;
 
-## 📋 Requirements
+## Requirements
 
-- Node.js 18+ (recommended v20)
+- Node.js 20+
 - npm 9+
-- Docker (optional, only if you use RabbitMQ)
+- Docker (optional, only if you will use RabbitMQ)
 
----
+&nbsp;
 
-## 🛠️ Installation
+## Installation
 
 ```bash
 # 1. Clone/download the project
@@ -72,20 +99,20 @@ npm install
 cp .env.example .env
 ```
 
----
+&nbsp;
 
-## 🚀 Running the Project
+## Running the Project
 
-### Option A: TCP (Without RabbitMQ) ⭐ Recommended for development
+### Option A: Moleculer TCP (Recommended for development)
 
 ```bash
 # Uses TCP by default
 npm start
 ```
 
-✅ Works without installing anything additional
-✅ Fast and simple for development
-✅ All services communicate correctly
+- Works without installing anything additional
+- Fast and simple for development
+- All services communicate correctly
 
 ### Option B: AMQP (With RabbitMQ)
 
@@ -120,9 +147,9 @@ Stop:
 npm run docker:down
 ```
 
----
+&nbsp;
 
-## 📊 API Endpoints
+## API Endpoints
 
 ### Health Checks
 ```
@@ -177,9 +204,9 @@ Content-Type: application/json
 GET http://localhost:3000/api/docs
 ```
 
----
+&nbsp;
 
-## 🧪 Testing
+## Testing
 
 ### Run tests (once)
 ```bash
@@ -201,9 +228,62 @@ npm run test:coverage
 npm run test:ui
 ```
 
----
+&nbsp;
 
-## 📁 Project Structure
+## Database Migrations
+
+The project includes a migration management system for controlling database schema changes. Migrations are version-controlled and tracked in the `_migrations` table.
+
+### Available Commands
+
+**Run pending migrations**
+```bash
+npm run migrate:up
+```
+Executes all pending migration files and tracks them in the _migrations table.
+
+**Rollback last migration**
+```bash
+npm run migrate:down
+```
+Rolls back the most recently executed migration.
+
+**View migration status**
+```bash
+npm run migrate:status
+```
+Displays all migrations (executed ✅ and pending ⏳).
+
+### Creating New Migrations
+
+1. Create a new file in `services/shared/migrations/` following the naming pattern:
+   ```
+   NNN_description.js
+   ```
+   Example: `004_add_user_roles_table.js`
+
+2. Implement your migration:
+   ```javascript
+   import { run } from '../sqlite.js';
+
+   export default {
+     async up(db) {
+       await run(db, 'CREATE TABLE roles (id INTEGER PRIMARY KEY, name TEXT UNIQUE)');
+     },
+     async down(db) {
+       await run(db, 'DROP TABLE roles');
+     },
+   };
+   ```
+
+3. Run migrations to apply the changes:
+   ```bash
+   npm run migrate:up
+   ```
+
+&nbsp;
+
+## Project Structure
 
 ```
 .
@@ -222,9 +302,6 @@ npm run test:ui
 │       ├── sqlite.js      # SQLite utilities
 │       ├── healthCheck.js # Health check generator
 │       └── rabbitmq.js    # RabbitMQ helpers (deprecated)
-├── docs/
-│   ├── ENHANCEMENT_ROADMAP.md           # 7-point improvement plan
-│   └── TRANSPORTER_CONFIGURATION_PLAN.md # TCP vs AMQP architecture documentation
 ├── index.js               # Services orchestrator
 ├── .env.example           # Example environment variables
 ├── package.json           # Dependencies and scripts
@@ -234,9 +311,9 @@ npm run test:ui
 └── README.md              # This file
 ```
 
----
+&nbsp;
 
-## ⚙️ Configuration
+## Configuration
 
 ### Environment Variables (.env)
 
@@ -262,39 +339,39 @@ NODE_ENV=development
 GATEWAY_PORT=3000
 ```
 
----
+&nbsp;
 
-## 🔄 Dynamic Transporter Changes
+## Dynamic Transporter Changes
 
 ### TCP vs AMQP - When to use each?
 
-| Scenario | TRANSPORTER_TYPE | Command |
-|----------|------------------|---------|
-| Local development | TCP | `npm start` |
-| Testing | TCP | `npm test` |
-| Production | AMQP | `npm start` (with RabbitMQ running) |
-| Demo/POC | TCP | `npm start` |
+| Scenario          | TRANSPORTER_TYPE | Command                             |
+|-------------------|------------------|-------------------------------------|
+| Local development | TCP              | `npm start`                         |
+| Testing           | TCP              | `npm test`                          |
+| Production        | AMQP             | `npm start` (with RabbitMQ running) |
+| Demo/POC          | TCP              | `npm start`                         |
 
 **No code changes needed in services** - Just update the environment variable!
 
----
+&nbsp;
 
-## 📦 Main Dependencies
+## Main Dependencies
 
-| Package | Version | Purpose |
-|---------|---------|---------|
-| moleculer | 0.15.0 | Microservices framework |
-| moleculer-web | 0.11.0 | REST API Gateway |
-| sqlite3 | 5.1.6 | Local database |
-| jsonwebtoken | 8.5.1 | JWT tokens |
-| bcryptjs | 2.4.3 | Password hashing |
-| winston | 3.19.0 | Structured logging |
-| vitest | 1.0.0 | Testing framework |
-| amqplib | 0.10.3 | RabbitMQ client (optional) |
+| Package       | Version | Purpose                    |
+|---------------|---------|----------------------------|
+| moleculer     | 0.15.0  | Microservices framework    |
+| moleculer-web | 0.11.0  | REST API Gateway           |
+| sqlite3       | 5.1.6   | Local database             |
+| jsonwebtoken  | 8.5.1   | JWT tokens                 |
+| bcryptjs      | 2.4.3   | Password hashing           |
+| winston       | 3.19.0  | Structured logging         |
+| vitest        | 1.0.0   | Testing framework          |
+| amqplib       | 0.10.3  | RabbitMQ client (optional) |
 
----
+&nbsp;
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Error: "ECONNREFUSED" with TRANSPORTER_TYPE=AMQP
 **Solution:** RabbitMQ is not running. Run `npm run rabbitmq` in another terminal.
@@ -314,36 +391,9 @@ GATEWAY_PORT=3001
 mkdir logs
 ```
 
----
+&nbsp;
 
-## 📚 Additional Documentation
-
-- [ENHANCEMENT_ROADMAP.md](docs/ENHANCEMENT_ROADMAP.md) - 7-point improvement plan details
-- [TRANSPORTER_CONFIGURATION_PLAN.md](docs/TRANSPORTER_CONFIGURATION_PLAN.md) - TCP vs RabbitMQ architecture details
-- [Moleculer Documentation](https://moleculer.services)
-- [Vitest Documentation](https://vitest.dev)
-
----
-
-## 🎯 Suggested Future Improvements
-
-- [ ] Implement Kafka as alternative transporter
-- [ ] Add OAuth2 authentication
-- [ ] Implement Circuit Breaker pattern
-- [ ] Add rate limiting
-- [ ] Implement distributed caching (Redis)
-- [ ] Add Prometheus metrics
-- [ ] Implement distributed tracing
-
----
-
-## 📝 License
-
-This project is open source and available under the ISC license.
-
----
-
-## 👨‍💻 Development
+## Development
 
 ### Creating a new service
 
@@ -360,6 +410,13 @@ Reference: [services/user/user.service.js](services/user/user.service.js)
 2. Run: `npm test`
 3. View coverage: `npm run test:coverage`
 
----
+&nbsp;
 
-**Last updated:** April 2026
+### Version History
+
+v1.0 (2026.04.05) - Adding base source code.  
+
+&nbsp;
+
+This source code is licensed under GPL v3.0  
+Please send me your feedback about this project: andres.garcia.alves@gmail.com

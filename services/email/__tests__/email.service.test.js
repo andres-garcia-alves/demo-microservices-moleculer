@@ -1,16 +1,24 @@
-import EmailService from '../email.service.js';
+import { ServiceBroker } from 'moleculer';
+import createEmailService from '../email.service.js';
 
 describe('Email Service', () => {
+  let broker;
+
   beforeAll(async () => {
-    await EmailService.start();
+    broker = new ServiceBroker({
+      logger: false,
+      transporter: 'fake',
+    });
+    broker.createService(createEmailService(broker));
+    await broker.start();
   });
 
   afterAll(async () => {
-    await EmailService.stop();
+    await broker.stop();
   });
 
   test('sendEmail returns a confirmation message', async () => {
-    const result = await EmailService.call('email.sendEmail', {
+    const result = await broker.call('email.sendEmail', {
       recipient: 'test@example.com',
       subject: 'Welcome',
       content: 'Hello world',

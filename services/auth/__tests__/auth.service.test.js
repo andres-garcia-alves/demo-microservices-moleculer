@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
-import AuthService from '../auth.service.js';
+import { ServiceBroker } from 'moleculer';
+import createAuthService from '../auth.service.js';
 import { openDatabase, run, closeDatabase } from '../../shared/sqlite.js';
 
 const testUser = {
@@ -8,10 +9,17 @@ const testUser = {
 };
 
 let authDb;
+let broker;
 
 describe('Auth Service', () => {
   beforeAll(async () => {
-    await AuthService.start();
+    broker = new ServiceBroker({
+      logger: false,
+      transporter: 'fake',
+    });
+    broker.createService(createAuthService(broker));
+    await broker.start();
+
     authDb = await openDatabase(process.env.AUTH_DB_PATH || 'services/auth/auth.db');
     const hashedPassword = await bcrypt.hash(testUser.password, 10);
     await run(authDb, 'INSERT OR REPLACE INTO users (username, password) VALUES (?, ?)', [
@@ -21,14 +29,14 @@ describe('Auth Service', () => {
   });
 
   afterAll(async () => {
-    await AuthService.stop();
+    await broker.stop();
     if (authDb) {
       await closeDatabase(authDb);
     }
   });
 
   test('authUser succeeds for test credentials', async () => {
-    const result = await AuthService.call('auth.authUser', {
+    const result = await broker.call('auth.authUser', {
       username: testUser.username,
       password: testUser.password,
     });
@@ -40,7 +48,7 @@ describe('Auth Service', () => {
   });
 
   test('login returns a JWT token for valid credentials', async () => {
-    const result = await AuthService.call('auth.login', {
+    const result = await broker.call('auth.login', {
       username: testUser.username,
       password: testUser.password,
     });
@@ -52,12 +60,12 @@ describe('Auth Service', () => {
   });
 
   test('verifyToken validates a generated token', async () => {
-    const loginResult = await AuthService.call('auth.login', {
+    const loginResult = await broker.call('auth.login', {
       username: testUser.username,
       password: testUser.password,
     });
 
-    const verifyResult = await AuthService.call('auth.verifyToken', {
+    const verifyResult = await broker.call('auth.verifyToken', {
       token: loginResult.token,
     });
 

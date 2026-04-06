@@ -1,10 +1,7 @@
-import { ServiceBroker } from 'moleculer';
 import { openDatabase, run, closeDatabase } from '../shared/sqlite.js';
 import { createHealthCheckAction } from '../shared/healthCheck.js';
 import logger from '../shared/logger.js';
-import { getTransporterConfig } from '../shared/transporter.js';
 
-const broker = new ServiceBroker(getTransporterConfig());
 let db;
 
 /**
@@ -41,58 +38,64 @@ async function processUserCreated(payload) {
   logger.info('Email queued', { recipient });
 }
 
-broker.createService({
-  name: 'email',
-  actions: {
-    ...createHealthCheckAction({ serviceName: 'email' }),
+/**
+ * Creates and returns the email service.
+ *
+ * @param {import('moleculer').ServiceBroker} broker - The Moleculer broker instance.
+ * @returns {object} The email service configuration.
+ */
+export default function createEmailService(broker) {
+  return {
+    name: 'email',
+    actions: {
+      ...createHealthCheckAction({ serviceName: 'email' }),
 
-    /**
-     * Sends an email by storing it in SQLite and logging the action.
-     *
-     * @param {import('moleculer').Context} ctx - The Moleculer action context.
-     * @returns {Promise<string>} A confirmation message.
-     */
-    async sendEmail(ctx) {
-      const { recipient, subject, content } = ctx.params;
-      await run(db, 'INSERT INTO sent_emails (recipient, subject, content) VALUES (?, ?, ?)', [recipient, subject, content]);
-      logger.info('Sending email', { recipient, subject });
-      logger.debug('Email content', { content });
-      return `Email sent to ${recipient}`;
-    },
-  },
-
-  /**
-   * Moleculer event listeners.
-   */
-  events: {
-    'user.created': {
-      handler(ctx) {
-        return processUserCreated(ctx.params);
+      /**
+       * Sends an email by storing it in SQLite and logging the action.
+       *
+       * @param {import('moleculer').Context} ctx - The Moleculer action context.
+       * @returns {Promise<string>} A confirmation message.
+       */
+      async sendEmail(ctx) {
+        const { recipient, subject, content } = ctx.params;
+        await run(db, 'INSERT INTO sent_emails (recipient, subject, content) VALUES (?, ?, ?)', [recipient, subject, content]);
+        logger.info('Sending email', { recipient, subject });
+        logger.debug('Email content', { content });
+        return `Email sent to ${recipient}`;
       },
     },
-  },
 
-  /**
-   * Starts the email service and opens the database.
-   *
-   * @returns {Promise<void>}
-   */
-  async started() {
-    db = await openDatabase(process.env.EMAIL_DB_PATH || 'services/email/email.db');
-    await ensureSchema();
-    logger.info('Email service started and listening to user.created events');
-  },
+    /**
+     * Moleculer event listeners.
+     */
+    events: {
+      'user.created': {
+        handler(ctx) {
+          return processUserCreated(ctx.params);
+        },
+      },
+    },
 
-  /**
-   * Closes the email SQLite database when stopped.
-   *
-   * @returns {Promise<void>}
-   */
-  async stopped() {
-    if (db) {
-      await closeDatabase(db);
-    }
-  },
-});
+    /**
+     * Starts the email service and opens the database.
+     *
+     * @returns {Promise<void>}
+     */
+    async started() {
+      db = await openDatabase(process.env.EMAIL_DB_PATH || 'services/email/email.db');
+      await ensureSchema();
+      logger.info('Email service started and listening to user.created events');
+    },
 
-export default broker;
+    /**
+     * Closes the email SQLite database when stopped.
+     *
+     * @returns {Promise<void>}
+     */
+    async stopped() {
+      if (db) {
+        await closeDatabase(db);
+      }
+    },
+  };
+}

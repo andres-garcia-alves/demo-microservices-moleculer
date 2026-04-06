@@ -14,7 +14,6 @@
 ## Build and Test
 - Install: `npm install`
 - Run: `npm run start` (starts all services)
-- No test suite configured yet
 
 ## Conventions
 - Service structure: Create broker → define service with name and actions → export broker
