@@ -1,3 +1,5 @@
+import { isShuttingDown } from './graceful-shutdown.js';
+
 /**
  * Returns a Moleculer action object that exposes a standard health check endpoint.
  *
@@ -11,6 +13,15 @@ export function createHealthCheckAction(config = {}) {
     async health(ctx) {
       const uptime = process.uptime();
       const memory = process.memoryUsage();
+
+      if (isShuttingDown()) {
+        return {
+          status: 'shutting_down',
+          service: config.serviceName || 'unknown',
+          uptime,
+          timestamp: new Date().toISOString(),
+        };
+      }
 
       try {
         if (config.check) {

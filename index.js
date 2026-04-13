@@ -7,6 +7,7 @@ import createGatewayService from './services/gateway/gateway.service.js';
 import { CircuitBreakerMiddleware } from './services/shared/circuit-breaker-middleware.js';
 import { getTransporterConfig } from './services/shared/transporter.js';
 import logger from './services/shared/logger.js';
+import { setupGracefulShutdown } from './services/shared/graceful-shutdown.js';
 
 dotenv.config();
 
@@ -44,6 +45,9 @@ const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 async function startApp() {
   // Start the main broker
   await broker.start();
+
+  // Register graceful shutdown handlers (SIGTERM / SIGINT)
+  setupGracefulShutdown(broker);
 
   // Create services on the main broker
   broker.createService(createUserService(broker));
